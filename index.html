@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SSC Batch 2022 - Iftar Fund Collection </title>
+<title>SSC Batch 2022 - Iftar Fund</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -115,6 +115,23 @@ color:gold;
 font-weight:bold;
 margin:10px 0;
 }
+
+footer{
+text-align:center;
+padding:20px;
+margin-top:30px;
+background:rgba(0,0,0,0.7);
+color:#ccc;
+font-size:14px;
+}
+footer a{
+color:gold;
+text-decoration:none;
+font-weight:bold;
+}
+footer a:hover{
+text-shadow:0 0 8px gold;
+}
 </style>
 </head>
 
@@ -125,7 +142,7 @@ margin:10px 0;
 <div class="moon"></div>
 
 <h2>SSC Batch 2022</h2>
-<h3>Iftar Mahfil Fund Collection</h3>
+<h3>Iftar Mahfil Fund</h3>
 
 <div>🌙 ইফতার শুরু হতে বাকি</div>
 <div id="countdown">Loading...</div>
@@ -185,6 +202,13 @@ Send money only ✅ With Cashout Charge
 <tbody id="donorList"></tbody>
 </table>
 </div>
+
+<footer>
+Developed by 
+<a href="https://www.facebook.com/CrazySaiful91" target="_blank">
+Saiful
+</a>
+</footer>
 
 <script>
 const firebaseConfig = {
@@ -277,11 +301,7 @@ backgroundColor:["#3b82f6","#ec4899","#f59e0b"]
 }]
 },
 options:{
-plugins:{
-legend:{
-labels:{color:"#ffffff"}
-}
-}
+plugins:{legend:{labels:{color:"#ffffff"}}}
 }
 });
 });
@@ -292,7 +312,7 @@ db.collection("donations").doc(id).delete();
 }
 }
 
-const eventDate=new Date("March 15, 2026 17:30:00").getTime();
+const eventDate=new Date("March 25, 2026 17:30:00").getTime();
 setInterval(()=>{
 const now=new Date().getTime();
 const distance=eventDate-now;
