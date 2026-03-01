@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSC Batch 2022 - Iftar Fund Collection </title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:white;
+}
+
+header{
+position:relative;
+text-align:center;
+padding:100px 20px 60px;
+background:black;
+overflow:hidden;
+}
+
+.admin-icon{
+position:absolute;
+top:15px;
+right:15px;
+font-size:20px;
+cursor:pointer;
+background:rgba(255,255,255,0.1);
+padding:8px 12px;
+border-radius:50%;
+}
+
+.moon{
+position:absolute;
+top:25px;
+left:20px;
+width:70px;
+height:70px;
+background:radial-gradient(circle at 30% 30%, #fff, #f7f3c6 60%, #d4c76f);
+border-radius:50%;
+box-shadow:0 0 30px gold;
+}
+
+.card{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(10px);
+padding:18px;
+margin:15px;
+border-radius:15px;
+box-shadow:0 8px 20px rgba(0,0,0,0.4);
+}
+
+input,select{
+width:100%;
+padding:12px;
+margin:8px 0;
+border:none;
+border-radius:10px;
+}
+
+button{
+padding:10px 15px;
+background:gold;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.progress{
+background:#222;
+border-radius:20px;
+overflow:hidden;
+margin-top:10px;
+}
+.progress-bar{
+height:18px;
+background:gold;
+width:0%;
+transition:0.5s;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px;
+font-size:13px;
+}
+td,th{
+border-bottom:1px solid rgba(255,255,255,0.2);
+padding:6px;
+text-align:center;
+}
+
+#adminPanel{
+display:none;
+text-align:center;
+padding:10px;
+}
+
+.notice{
+color:gold;
+margin-top:8px;
+font-size:13px;
+}
+
+#countdown{
+color:gold;
+font-weight:bold;
+margin:10px 0;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="admin-icon" onclick="toggleAdmin()">⚙️</div>
+<div class="moon"></div>
+
+<h2>SSC Batch 2022</h2>
+<h3>Iftar Mahfil Fund Collection</h3>
+
+<div>🌙 ইফতার শুরু হতে বাকি</div>
+<div id="countdown">Loading...</div>
+
+<h3>Total: <span id="total">0</span> ৳</h3>
+<div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+</header>
+
+<div id="adminPanel">
+<input type="password" id="adminPass" placeholder="Admin Password">
+<button onclick="loginAdmin()">Login</button>
+<button onclick="logoutAdmin()">Logout</button>
+</div>
+
+<div class="card">
+<h4>📱 Payment Methods</h4>
+bKash / Nagad / Rocket<br><br>
+
+<b>Number:</b>
+<span id="paymentNumber">017XXXXXXXX</span>
+<button onclick="copyNumber()">Copy</button>
+
+<div class="notice">
+Send money only ✅ With Cashout Charge
+</div>
+</div>
+
+<div class="card">
+<input type="text" id="name" placeholder="আপনার নাম">
+<input type="number" id="amount" placeholder="কত টাকা দিচ্ছেন">
+<select id="method">
+<option value="">Select Method</option>
+<option>bKash</option>
+<option>Nagad</option>
+<option>Rocket</option>
+</select>
+<input type="text" id="trx" placeholder="Transaction ID">
+<button onclick="addDonation()">Submit</button>
+</div>
+
+<div class="card">
+<h4>📊 Payment Chart</h4>
+<canvas id="donationChart"></canvas>
+</div>
+
+<div class="card">
+<h4>📋 Donor List</h4>
+<table>
+<thead>
+<tr>
+<th>নাম</th>
+<th>৳</th>
+<th>Method</th>
+<th>Admin</th>
+</tr>
+</thead>
+<tbody id="donorList"></tbody>
+</table>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBTt6NgG9ln6JPMBizzZLSXAUeie1JoUjE",
+  authDomain: "ssc-ifter-22-batch.firebaseapp.com",
+  projectId: "ssc-ifter-22-batch"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+
+let isAdmin=false;
+let chart;
+
+function toggleAdmin(){
+const panel=document.getElementById("adminPanel");
+panel.style.display=panel.style.display==="block"?"none":"block";
+}
+
+function loginAdmin(){
+if(document.getElementById("adminPass").value==="ssc2022batch"){
+isAdmin=true;
+alert("Admin Mode ON");
+}
+}
+
+function logoutAdmin(){
+isAdmin=false;
+alert("Logged Out");
+}
+
+function copyNumber(){
+const text=document.getElementById("paymentNumber").innerText;
+navigator.clipboard.writeText(text);
+alert("Number Copied ✅");
+}
+
+function addDonation(){
+const name=document.getElementById("name").value;
+const amount=document.getElementById("amount").value;
+const method=document.getElementById("method").value;
+const trx=document.getElementById("trx").value;
+
+if(!name||!amount||!method||!trx){alert("সব তথ্য পূরণ করুন");return;}
+
+db.collection("donations").add({
+name,
+amount:parseInt(amount),
+method,
+trx
+});
+}
+
+db.collection("donations").onSnapshot(snapshot=>{
+const donorList=document.getElementById("donorList");
+donorList.innerHTML="";
+let total=0,bkash=0,nagad=0,rocket=0;
+
+snapshot.forEach(doc=>{
+const data=doc.data();
+total+=data.amount;
+
+if(data.method==="bKash") bkash+=data.amount;
+if(data.method==="Nagad") nagad+=data.amount;
+if(data.method==="Rocket") rocket+=data.amount;
+
+const row=donorList.insertRow();
+row.insertCell(0).innerText=data.name;
+row.insertCell(1).innerText=data.amount;
+row.insertCell(2).innerText=data.method;
+
+if(isAdmin){
+row.insertCell(3).innerHTML=`<button onclick="deleteDonation('${doc.id}')">❌</button>`;
+}else{
+row.insertCell(3).innerText="-";
+}
+});
+
+document.getElementById("total").innerText=total;
+document.getElementById("progressBar").style.width=(total/30000*100)+"%";
+
+if(chart) chart.destroy();
+chart=new Chart(document.getElementById("donationChart"),{
+type:"doughnut",
+data:{
+labels:["bKash","Nagad","Rocket"],
+datasets:[{
+data:[bkash,nagad,rocket],
+backgroundColor:["#3b82f6","#ec4899","#f59e0b"]
+}]
+},
+options:{
+plugins:{
+legend:{
+labels:{color:"#ffffff"}
+}
+}
+}
+});
+});
+
+function deleteDonation(id){
+if(isAdmin){
+db.collection("donations").doc(id).delete();
+}
+}
+
+const eventDate=new Date("March 15, 2026 17:30:00").getTime();
+setInterval(()=>{
+const now=new Date().getTime();
+const distance=eventDate-now;
+if(distance<=0){
+document.getElementById("countdown").innerHTML="ইফতার শুরু হয়েছে 🎉";
+return;
+}
+const d=Math.floor(distance/(1000*60*60*24));
+const h=Math.floor((distance%(1000*60*60*24))/(1000*60*60));
+const m=Math.floor((distance%(1000*60*60))/(1000*60));
+const s=Math.floor((distance%(1000*60))/1000);
+document.getElementById("countdown").innerHTML=
+`${d} দিন ${h} ঘন্টা ${m} মিনিট ${s} সেকেন্ড`;
+},1000);
+</script>
+
+</body>
+</html>
