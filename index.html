@@ -17,12 +17,43 @@ background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
 color:white;
 }
 
+/* HEADER */
 header{
 position:relative;
 text-align:center;
-padding:100px 20px 60px;
+padding:120px 20px 60px;
 background:black;
 overflow:hidden;
+}
+
+/* Moon */
+.moon{
+position:absolute;
+top:30px;
+left:25px;
+width:80px;
+height:80px;
+background:radial-gradient(circle at 30% 30%, #fff, #f7f3c6 60%, #d4c76f);
+border-radius:50%;
+box-shadow:0 0 40px gold;
+}
+
+/* Stars */
+.stars{
+position:absolute;
+width:100%;
+height:100%;
+top:0;
+left:0;
+background:
+radial-gradient(2px 2px at 20% 30%, white, transparent),
+radial-gradient(2px 2px at 70% 40%, white, transparent),
+radial-gradient(2px 2px at 40% 70%, white, transparent);
+animation:twinkle 4s infinite alternate;
+}
+@keyframes twinkle{
+from{opacity:0.4;}
+to{opacity:1;}
 }
 
 .admin-icon{
@@ -36,24 +67,12 @@ padding:8px 12px;
 border-radius:50%;
 }
 
-.moon{
-position:absolute;
-top:25px;
-left:20px;
-width:70px;
-height:70px;
-background:radial-gradient(circle at 30% 30%, #fff, #f7f3c6 60%, #d4c76f);
-border-radius:50%;
-box-shadow:0 0 30px gold;
-}
-
 .card{
 background:rgba(255,255,255,0.08);
 backdrop-filter:blur(10px);
 padding:18px;
 margin:15px;
 border-radius:15px;
-box-shadow:0 8px 20px rgba(0,0,0,0.4);
 }
 
 input,select{
@@ -65,7 +84,7 @@ border-radius:10px;
 }
 
 button{
-padding:10px 15px;
+padding:8px 14px;
 background:gold;
 border:none;
 border-radius:8px;
@@ -110,12 +129,6 @@ margin-top:8px;
 font-size:13px;
 }
 
-#countdown{
-color:gold;
-font-weight:bold;
-margin:10px 0;
-}
-
 footer{
 text-align:center;
 padding:20px;
@@ -129,17 +142,15 @@ color:gold;
 text-decoration:none;
 font-weight:bold;
 }
-footer a:hover{
-text-shadow:0 0 8px gold;
-}
 </style>
 </head>
 
 <body>
 
 <header>
-<div class="admin-icon" onclick="toggleAdmin()">⚙️</div>
+<div class="stars"></div>
 <div class="moon"></div>
+<div class="admin-icon" onclick="toggleAdmin()">⚙️</div>
 
 <h2>SSC Batch 2022</h2>
 <h3>Iftar Mahfil Fund Collection</h3>
@@ -184,11 +195,6 @@ Send money only ✅ With Cashout Charge
 </div>
 
 <div class="card">
-<h4>📊 Payment Chart</h4>
-<canvas id="donationChart"></canvas>
-</div>
-
-<div class="card">
 <h4>📋 Donor List</h4>
 <table>
 <thead>
@@ -196,6 +202,7 @@ Send money only ✅ With Cashout Charge
 <th>নাম</th>
 <th>৳</th>
 <th>Method</th>
+<th>TRX ID</th>
 <th>Admin</th>
 </tr>
 </thead>
@@ -221,7 +228,6 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
 let isAdmin=false;
-let chart;
 
 function toggleAdmin(){
 const panel=document.getElementById("adminPanel");
@@ -232,17 +238,18 @@ function loginAdmin(){
 if(document.getElementById("adminPass").value==="ssc2022batch"){
 isAdmin=true;
 alert("Admin Mode ON");
+loadData();
 }
 }
 
 function logoutAdmin(){
 isAdmin=false;
 alert("Logged Out");
+loadData();
 }
 
 function copyNumber(){
-const text=document.getElementById("paymentNumber").innerText;
-navigator.clipboard.writeText(text);
+navigator.clipboard.writeText(document.getElementById("paymentNumber").innerText);
 alert("Number Copied ✅");
 }
 
@@ -262,49 +269,33 @@ trx
 });
 }
 
+function loadData(){
 db.collection("donations").onSnapshot(snapshot=>{
 const donorList=document.getElementById("donorList");
 donorList.innerHTML="";
-let total=0,bkash=0,nagad=0,rocket=0;
+let total=0;
 
 snapshot.forEach(doc=>{
 const data=doc.data();
 total+=data.amount;
 
-if(data.method==="bKash") bkash+=data.amount;
-if(data.method==="Nagad") nagad+=data.amount;
-if(data.method==="Rocket") rocket+=data.amount;
-
 const row=donorList.insertRow();
 row.insertCell(0).innerText=data.name;
 row.insertCell(1).innerText=data.amount;
 row.insertCell(2).innerText=data.method;
+row.insertCell(3).innerText=data.trx;
 
 if(isAdmin){
-row.insertCell(3).innerHTML=`<button onclick="deleteDonation('${doc.id}')">❌</button>`;
+row.insertCell(4).innerHTML=`<button onclick="deleteDonation('${doc.id}')">❌</button>`;
 }else{
-row.insertCell(3).innerText="-";
+row.insertCell(4).innerText="-";
 }
 });
 
 document.getElementById("total").innerText=total;
 document.getElementById("progressBar").style.width=(total/30000*100)+"%";
-
-if(chart) chart.destroy();
-chart=new Chart(document.getElementById("donationChart"),{
-type:"doughnut",
-data:{
-labels:["bKash","Nagad","Rocket"],
-datasets:[{
-data:[bkash,nagad,rocket],
-backgroundColor:["#3b82f6","#ec4899","#f59e0b"]
-}]
-},
-options:{
-plugins:{legend:{labels:{color:"#ffffff"}}}
+});
 }
-});
-});
 
 function deleteDonation(id){
 if(isAdmin){
@@ -312,7 +303,9 @@ db.collection("donations").doc(id).delete();
 }
 }
 
-const eventDate=new Date("March 13, 2026 17:30:00").getTime();
+loadData();
+
+const eventDate=new Date("March 15, 2026 17:30:00").getTime();
 setInterval(()=>{
 const now=new Date().getTime();
 const distance=eventDate-now;
@@ -331,4 +324,3 @@ document.getElementById("countdown").innerHTML=
 
 </body>
 </html>
-
